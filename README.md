@@ -12,6 +12,21 @@ The main idea behind this project is to create a sort of **minimal** 3D Metavers
 * Smart Contracts storing user data (no database needed + server-wide data)
 * Possibility to send Tokens (ERC20, NFT etc...) through the game interface
 
+## How does it work ?
+
+### Socket Communication
+1. The server listens for incoming connections
+2. It accepts the client and does the auth process
+3. It receives positions from each client in a thread
+4. It sends all players positions to each client in another thread
+
+### ECDSA Signatures
+1. The client currently generates a Wallet on each launch (the objective is to add a MetaMask / Private Key auth and this is 100% doable)
+2. The client signs a message ("auth") using it's wallet private key
+3. The server awaits for the client's address and it's signed message
+4. The server reverses the signed message to obtain an address and compares it with the client address to make sure both correspond
+5. Connection is either authorized or refused after the last step
+
 ## How to run the program
 
 ### Python

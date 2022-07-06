@@ -4,6 +4,23 @@ import socket
 import threading
 import pickle
 import time
+from web3.auto import w3
+from eth_account.messages import encode_defunct
+from eth_account import Account
+import secrets
+
+priv = secrets.token_hex(32)
+private_key = "0x" + priv
+print ("SAVE BUT DO NOT SHARE THIS:", private_key)
+acct = Account.from_key(private_key)
+print("Address:", acct.address)
+msg = "auth"
+message = encode_defunct(text=msg)
+signed_message = w3.eth.account.sign_message(message, private_key=private_key)
+print(signed_message.signature)
+# message = encode_defunct(text="auth")
+# print(w3.eth.account.recover_message(message, signature=signed_message.signature))
+print([acct.address, signed_message.signature])
 
 res_x = 1000
 res_y = 600
@@ -21,7 +38,17 @@ s.connect(('127.0.0.1', port))
 
 def handleConnection(s):
     global pos_y, old_pos_y, pos_x, old_pos_x, players
-    while True:
+    playerAuth = False
+    while playerAuth == False:
+        infos = [acct.address, signed_message.signature]
+        data = pickle.dumps(infos)
+        s.send(data) # send it first so the server accepts connexion
+        time.sleep(2)
+        s.send(data)
+
+        playerAuth = True
+
+    while playerAuth:
         if old_pos_y != pos_y or old_pos_x != pos_x:
             old_pos_y = pos_y
             positions = [pos_x, pos_y]

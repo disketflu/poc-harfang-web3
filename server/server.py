@@ -3,6 +3,8 @@ import threading
 import pickle
 import random
 import time
+from web3.auto import w3
+from eth_account.messages import encode_defunct
 
 s = socket.socket()
 port = 12345
@@ -16,7 +18,35 @@ pos_clients = []
 
 def handleClientRcv(c, addr, id_client):
 	playerAlive = True
-	while playerAlive:
+	playerAuth = False
+
+	#authenticate player with erc20 address and signed message	
+	while playerAuth == False:
+		try:
+			data = c.recv(4096)
+			if data:
+				try:
+					final_data = pickle.loads(data)
+					print(final_data)
+					client_address = final_data[0]
+					client_signature = final_data[1]
+					message = encode_defunct(text="auth")
+					recovered_message = w3.eth.account.recover_message(message, signature=client_signature)
+					print(recovered_message)
+					if client_address == recovered_message:
+						print("Player AUTH")
+						playerAuth = True
+
+				except:
+					print("Data error while auth")
+	
+		except Exception as err: # client connection lost or any other error
+			print(err)
+			print("Disconnected client ID : #" + str(id_client))
+			pos_clients[id_client] = [0, 0, 0]
+			playerAlive = False
+
+	while playerAlive and playerAuth:
 		try:
 			data = c.recv(4096)
 			if data:
@@ -26,7 +56,7 @@ def handleClientRcv(c, addr, id_client):
 					pos_clients[id_client][1] = final_data[1]
 				except:
 					print("Data error")
-
+	
 		except Exception as err: # client connection lost or any other error
 			print(err)
 			print("Disconnected client ID : #" + str(id_client))
